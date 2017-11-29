@@ -73,10 +73,9 @@ function packColor(color: Color): [number, number] {
 interface Binder<T> {
     statistics: { max: number };
 
-    populatePaintArray(paintArray: StructArray,
-                       start: number,
-                       length: number,
-                       feature: Feature): void;
+    populatePaintArray(length: number, feature: Feature): void;
+    upload(Context): void;
+    destroy(): void;
 
     defines(): Array<string>;
 
@@ -104,6 +103,8 @@ class ConstantBinder<T> implements Binder<T> {
     }
 
     populatePaintArray() {}
+    upload() {}
+    destroy() {}
 
     setUniforms(context: Context,
                 program: Program,
@@ -125,21 +126,34 @@ class SourceExpressionBinder<T> implements Binder<T> {
     type: string;
     statistics: { max: number };
 
+    PaintVertexArray: Class<StructArray>;
+    paintVertexArray: StructArray;
+    paintVertexBuffer: ?VertexBuffer;
+
     constructor(expression: SourceExpression, name: string, type: string) {
         this.expression = expression;
         this.name = name;
         this.type = type;
         this.statistics = { max: -Infinity };
+        this.PaintVertexArray = createVertexArrayType([{
+            name: `a_${name}`,
+            type: 'Float32',
+            components: type === 'color' ? 2 : 1
+        }]);
+        this.paintVertexArray = new this.PaintVertexArray();
     }
 
     defines() {
         return [];
     }
 
-    populatePaintArray(paintArray: StructArray,
-                       start: number,
-                       length: number,
-                       feature: Feature) {
+    populatePaintArray(length: number, feature: Feature) {
+        const paintArray = this.paintVertexArray;
+        if (paintArray.bytesPerElement === 0) return;
+
+        const start = paintArray.length;
+        paintArray.resize(length);
+
         const value = this.expression.evaluate({zoom: 0}, feature);
 
         if (this.type === 'color') {
@@ -159,6 +173,18 @@ class SourceExpressionBinder<T> implements Binder<T> {
         }
     }
 
+    upload(context: Context) {
+        if (this.paintVertexArray) {
+            this.paintVertexBuffer = context.createVertexBuffer(this.paintVertexArray);
+        }
+    }
+
+    destroy() {
+        if (this.paintVertexBuffer) {
+            this.paintVertexBuffer.destroy();
+        }
+    }
+
     setUniforms(context: Context, program: Program) {
         context.gl.uniform1f(program.uniforms[`a_${this.name}_t`], 0);
     }
@@ -172,6 +198,10 @@ class CompositeExpressionBinder<T> implements Binder<T> {
     zoom: number;
     statistics: { max: number };
 
+    PaintVertexArray: Class<StructArray>;
+    paintVertexArray: StructArray;
+    paintVertexBuffer: ?VertexBuffer;
+
     constructor(expression: CompositeExpression, name: string, type: string, useIntegerZoom: boolean, zoom: number) {
         this.expression = expression;
         this.name = name;
@@ -179,16 +209,25 @@ class CompositeExpressionBinder<T> implements Binder<T> {
         this.useIntegerZoom = useIntegerZoom;
         this.zoom = zoom;
         this.statistics = { max: -Infinity };
+        this.PaintVertexArray = createVertexArrayType([{
+            name: `a_${name}`,
+            type: 'Float32',
+            components: type === 'color' ? 4 : 2
+        }]);
+        this.paintVertexArray = new this.PaintVertexArray();
     }
 
     defines() {
         return [];
     }
 
-    populatePaintArray(paintArray: StructArray,
-                       start: number,
-                       length: number,
-                       feature: Feature) {
+    populatePaintArray(length: number, feature: Feature) {
+        const paintArray = this.paintVertexArray;
+        if (paintArray.bytesPerElement === 0) return;
+
+        const start = paintArray.length;
+        paintArray.resize(length);
+
         const min = this.expression.evaluate({zoom: this.zoom    }, feature);
         const max = this.expression.evaluate({zoom: this.zoom + 1}, feature);
 
@@ -210,6 +249,18 @@ class CompositeExpressionBinder<T> implements Binder<T> {
             }
 
             this.statistics.max = Math.max(this.statistics.max, min, max);
+        }
+    }
+
+    upload(context: Context) {
+        if (this.paintVertexArray) {
+            this.paintVertexBuffer = context.createVertexBuffer(this.paintVertexArray);
+        }
+    }
+
+    destroy() {
+        if (this.paintVertexBuffer) {
+            this.paintVertexBuffer.destroy();
         }
     }
 
@@ -250,10 +301,6 @@ class ProgramConfiguration {
     binders: { [string]: Binder<any> };
     cacheKey: string;
     layoutAttributes: ?Array<LayoutAttribute>;
-    PaintVertexArray: Class<StructArray>;
-
-    paintVertexArray: StructArray;
-    paintVertexBuffer: ?VertexBuffer;
 
     constructor() {
         this.binders = {};
@@ -262,7 +309,6 @@ class ProgramConfiguration {
 
     static createDynamic<Layer: TypedStyleLayer>(programInterface: ProgramInterface, layer: Layer, zoom: number) {
         const self = new ProgramConfiguration();
-        const attributes = [];
 
         for (const attribute of programInterface.paintAttributes || []) {
             const property = attribute.property;
@@ -277,23 +323,12 @@ class ProgramConfiguration {
             } else if (value.value.kind === 'source') {
                 self.binders[property] = new SourceExpressionBinder(value.value, name, type);
                 self.cacheKey += `/a_${name}`;
-                attributes.push({
-                    name: `a_${name}`,
-                    type: 'Float32',
-                    components: type === 'color' ? 2 : 1
-                });
             } else {
                 self.binders[property] = new CompositeExpressionBinder(value.value, name, type, useIntegerZoom, zoom);
                 self.cacheKey += `/z_${name}`;
-                attributes.push({
-                    name: `a_${name}`,
-                    type: 'Float32',
-                    components: type === 'color' ? 4 : 2
-                });
             }
         }
 
-        self.PaintVertexArray = createVertexArrayType(attributes);
         self.layoutAttributes = programInterface.layoutAttributes;
 
         return self;
@@ -325,18 +360,9 @@ class ProgramConfiguration {
         return ProgramConfiguration.forBackgroundColor(Color.black, 1);
     }
 
-    populatePaintArray(length: number, feature: Feature) {
-        const paintArray = this.paintVertexArray;
-        if (paintArray.bytesPerElement === 0) return;
-
-        const start = paintArray.length;
-        paintArray.resize(length);
-
+    populatePaintArrays(length: number, feature: Feature) {
         for (const property in this.binders) {
-            this.binders[property].populatePaintArray(
-                paintArray,
-                start, length,
-                feature);
+            this.binders[property].populatePaintArray(length, feature);
         }
     }
 
@@ -355,15 +381,28 @@ class ProgramConfiguration {
         }
     }
 
+    getPaintVertexBuffers() {
+        const buffers = [];
+        for (const property in this.binders) {
+            const binder = this.binders[property];
+            if (binder instanceof SourceExpressionBinder ||
+                binder instanceof CompositeExpressionBinder
+            ) {
+                buffers.push(binder.paintVertexBuffer);
+            }
+        }
+        return buffers;
+    }
+
     upload(context: Context) {
-        if (this.paintVertexArray) {
-            this.paintVertexBuffer = context.createVertexBuffer(this.paintVertexArray);
+        for (const property in this.binders) {
+            this.binders[property].upload(context);
         }
     }
 
     destroy() {
-        if (this.paintVertexBuffer) {
-            this.paintVertexBuffer.destroy();
+        for (const property in this.binders) {
+            this.binders[property].destroy();
         }
     }
 }
@@ -378,16 +417,14 @@ class ProgramConfigurationSet<Layer: TypedStyleLayer> {
         } else {
             this.programConfigurations = {};
             for (const layer of layers) {
-                const programConfiguration = ProgramConfiguration.createDynamic(programInterface, layer, zoom);
-                programConfiguration.paintVertexArray = new programConfiguration.PaintVertexArray();
-                this.programConfigurations[layer.id] = programConfiguration;
+                this.programConfigurations[layer.id] = ProgramConfiguration.createDynamic(programInterface, layer, zoom);
             }
         }
     }
 
     populatePaintArrays(length: number, feature: Feature) {
         for (const key in this.programConfigurations) {
-            this.programConfigurations[key].populatePaintArray(length, feature);
+            this.programConfigurations[key].populatePaintArrays(length, feature);
         }
     }
 
