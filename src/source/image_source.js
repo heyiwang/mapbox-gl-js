@@ -9,7 +9,7 @@ const Evented = require('../util/evented');
 const ajax = require('../util/ajax');
 const browser = require('../util/browser');
 const EXTENT = require('../data/extent');
-const RasterBoundsArray = require('../data/raster_bounds_array');
+const RasterBoundsArray = require('../data/array_type/raster_bounds');
 const VertexArrayObject = require('../render/vertex_array_object');
 const Texture = require('../render/texture');
 

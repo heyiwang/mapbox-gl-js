@@ -1,8 +1,9 @@
 // @flow
 
+const LayoutVertexArrayType = require('../array_type/fill_layout_vertex');
+const {layoutAttributes} = require('./fill_attributes');
 const {SegmentVector} = require('../segment');
 const {ProgramConfigurationSet} = require('../program_configuration');
-const createVertexArrayType = require('../vertex_array_type');
 const {LineIndexArray, TriangleIndexArray} = require('../index_array_type');
 const loadGeometry = require('../load_geometry');
 const earcut = require('earcut');
@@ -17,7 +18,6 @@ import type {
     IndexedFeature,
     PopulateParameters
 } from '../bucket';
-import type {ProgramInterface} from '../program_configuration';
 import type FillStyleLayer from '../../style/style_layer/fill_style_layer';
 import type {StructArray} from '../../util/struct_array';
 import type Context from '../../gl/context';
@@ -25,25 +25,7 @@ import type IndexBuffer from '../../gl/index_buffer';
 import type VertexBuffer from '../../gl/vertex_buffer';
 import type Point from '@mapbox/point-geometry';
 
-const fillInterface = {
-    layoutAttributes: [
-        {name: 'a_pos', components: 2, type: 'Int16'}
-    ],
-    indexArrayType: TriangleIndexArray,
-    indexArrayType2: LineIndexArray,
-
-    paintAttributes: [
-        {property: 'fill-color'},
-        {property: 'fill-outline-color'},
-        {property: 'fill-opacity'}
-    ]
-};
-
-const LayoutVertexArrayType = createVertexArrayType(fillInterface.layoutAttributes);
-
 class FillBucket implements Bucket {
-    static programInterface: ProgramInterface;
-
     index: number;
     zoom: number;
     overscaling: number;
@@ -53,10 +35,10 @@ class FillBucket implements Bucket {
     layoutVertexArray: StructArray;
     layoutVertexBuffer: VertexBuffer;
 
-    indexArray: StructArray;
+    indexArray: TriangleIndexArray;
     indexBuffer: IndexBuffer;
 
-    indexArray2: StructArray;
+    indexArray2: LineIndexArray;
     indexBuffer2: IndexBuffer;
 
     programConfigurations: ProgramConfigurationSet<FillStyleLayer>;
@@ -74,7 +56,7 @@ class FillBucket implements Bucket {
         this.layoutVertexArray = new LayoutVertexArrayType();
         this.indexArray = new TriangleIndexArray();
         this.indexArray2 = new LineIndexArray();
-        this.programConfigurations = new ProgramConfigurationSet(fillInterface, options.layers, options.zoom);
+        this.programConfigurations = new ProgramConfigurationSet(layoutAttributes, options.layers, options.zoom);
         this.segments = new SegmentVector();
         this.segments2 = new SegmentVector();
     }
@@ -170,7 +152,5 @@ class FillBucket implements Bucket {
 }
 
 register('FillBucket', FillBucket, {omit: ['layers']});
-
-FillBucket.programInterface = fillInterface;
 
 module.exports = FillBucket;

@@ -4,7 +4,6 @@ const Point = require('@mapbox/point-geometry');
 const loadGeometry = require('./load_geometry');
 const EXTENT = require('./extent');
 const featureFilter = require('../style-spec/feature_filter');
-const createStructArrayType = require('../util/struct_array');
 const Grid = require('grid-index');
 const DictionaryCoder = require('../util/dictionary_coder');
 const vt = require('@mapbox/vector-tile');
@@ -18,16 +17,7 @@ import type CollisionIndex from '../symbol/collision_index';
 import type StyleLayer from '../style/style_layer';
 import type {FeatureFilter} from '../style-spec/feature_filter';
 
-const FeatureIndexArray = createStructArrayType({
-    members: [
-        // the index of the feature in the original vectortile
-        { type: 'Uint32', name: 'featureIndex' },
-        // the source layer the feature appears in
-        { type: 'Uint16', name: 'sourceLayerIndex' },
-        // the bucket the feature appears in
-        { type: 'Uint16', name: 'bucketIndex' }
-    ]
-});
+const FeatureIndexArray = require('./array_type/feature_index');
 
 type QueryParameters = {
     scale: number,

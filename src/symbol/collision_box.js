@@ -1,7 +1,5 @@
 // @flow
 
-const createStructArrayType = require('../util/struct_array');
-
 export type CollisionBox = {
     anchorPoint: Point,
     anchorPointX: number,
@@ -33,33 +31,4 @@ export type CollisionBox = {
  * @class CollisionBoxArray
  * @private
  */
-
-const CollisionBoxArray = createStructArrayType({
-    members: [
-        // the box is centered around the anchor point
-        { type: 'Int16', name: 'anchorPointX' },
-        { type: 'Int16', name: 'anchorPointY' },
-
-        // distances to the edges from the anchor
-        { type: 'Int16', name: 'x1' },
-        { type: 'Int16', name: 'y1' },
-        { type: 'Int16', name: 'x2' },
-        { type: 'Int16', name: 'y2' },
-
-        // the index of the feature in the original vectortile
-        { type: 'Uint32', name: 'featureIndex' },
-        // the source layer the feature appears in
-        { type: 'Uint16', name: 'sourceLayerIndex' },
-        // the bucket the feature appears in
-        { type: 'Uint16', name: 'bucketIndex' },
-
-        // collision circles for lines store their distance to the anchor in tile units
-        // so that they can be ignored if the projected label doesn't extend into
-        // the box area
-        { type: 'Int16', name: 'radius' },
-        { type: 'Int16', name: 'signedDistanceFromAnchor' }
-
-    ]
-});
-
-module.exports = CollisionBoxArray;
+module.exports = require('../data/array_type/collision_box');

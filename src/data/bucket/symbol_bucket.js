@@ -1,16 +1,29 @@
 // @flow
 
+const {
+    symbolLayoutAttributes,
+    collisionBoxLayout,
+    collisionCircleLayout
+} = require('./symbol_attributes');
+const LayoutArray = require('../array_type/symbol_layout_vertex');
+const DynamicLayoutArray = require('../array_type/symbol_dynamic_layout_vertex');
+const OpacityArray = require('../array_type/symbol_opacity_vertex');
+const CollisionBoxLayoutArray = require('../array_type/collision_box_layout_vertex');
+const CollisionCircleLayoutArray = require('../array_type/collision_circle_layout_vertex');
+const CollisionArray = require('../array_type/collision_vertex');
+const PlacedSymbolArray = require('../array_type/placed_symbol');
+const GlyphOffsetArray = require('../array_type/glyph_offset');
+const LineVertexArray = require('../array_type/symbol_line_vertex');
+
 const Point = require('@mapbox/point-geometry');
 const {SegmentVector} = require('../segment');
 const {ProgramConfigurationSet} = require('../program_configuration');
-const createVertexArrayType = require('../vertex_array_type');
 const {TriangleIndexArray, LineIndexArray} = require('../index_array_type');
 const transformText = require('../../symbol/transform_text');
 const mergeLines = require('../../symbol/mergelines');
 const scriptDetection = require('../../util/script_detection');
 const loadGeometry = require('../load_geometry');
 const vectorTileFeatureTypes = require('@mapbox/vector-tile').VectorTileFeature.types;
-const createStructArrayType = require('../../util/struct_array');
 const verticalizePunctuation = require('../../util/verticalize_punctuation');
 const Anchor = require('../../symbol/anchor');
 const OpacityState = require('../../symbol/opacity_state');
@@ -24,7 +37,7 @@ import type {
     IndexedFeature,
     PopulateParameters
 } from '../bucket';
-import type {ProgramInterface, LayoutAttribute} from '../program_configuration';
+import type {ProgramInterface} from '../program_configuration';
 import type CollisionBoxArray, {CollisionBox} from '../../symbol/collision_box';
 import type { StructArray } from '../../util/struct_array';
 import type SymbolStyleLayer from '../../style/style_layer/symbol_style_layer';
@@ -88,105 +101,48 @@ export type SymbolFeature = {|
     id?: any
 |};
 
-const PlacedSymbolArray = createStructArrayType({
-    members: [
-        { type: 'Int16', name: 'anchorX' },
-        { type: 'Int16', name: 'anchorY' },
-        { type: 'Uint16', name: 'glyphStartIndex' },
-        { type: 'Uint16', name: 'numGlyphs' },
-        { type: 'Uint32', name: 'vertexStartIndex' },
-        { type: 'Uint32', name: 'lineStartIndex' },
-        { type: 'Uint32', name: 'lineLength' },
-        { type: 'Uint16', name: 'segment' },
-        { type: 'Uint16', name: 'lowerSize' },
-        { type: 'Uint16', name: 'upperSize' },
-        { type: 'Float32', name: 'lineOffsetX' },
-        { type: 'Float32', name: 'lineOffsetY' },
-        { type: 'Uint8', name: 'writingMode' },
-        { type: 'Uint8', name: 'hidden' }
-    ]
-});
-
-const GlyphOffsetArray = createStructArrayType({
-    members: [
-        { type: 'Float32', name: 'offsetX' }
-    ]
-});
-
-const LineVertexArray = createStructArrayType({
-    members: [
-        { type: 'Int16', name: 'x' },
-        { type: 'Int16', name: 'y' },
-        { type: 'Int16', name: 'tileUnitDistanceFromAnchor' }
-    ]});
-
-const layoutAttributes = [
-    {name: 'a_pos_offset',  components: 4, type: 'Int16'},
-    {name: 'a_data',        components: 4, type: 'Uint16'}
-];
-
-const dynamicLayoutAttributes = [
-    { name: 'a_projected_pos', components: 3, type: 'Float32' }
-];
-
 // Opacity arrays are frequently updated but don't contain a lot of information, so we pack them
 // tight. Each Uint32 is actually four duplicate Uint8s for the four corners of a glyph
 // 7 bits are for the current opacity, and the lowest bit is the target opacity
-const placementOpacityAttributes = [
-    { name: 'a_fade_opacity', components: 1, type: 'Uint32' }
-];
+
+// actually defined in symbol_attributes.js
+// const placementOpacityAttributes = [
+//     { name: 'a_fade_opacity', components: 1, type: 'Uint32' }
+// ];
 const shaderOpacityAttributes = [
     { name: 'a_fade_opacity', components: 1, type: 'Uint8', offset: 0 }
 ];
 
-const collisionAttributes = [
-    { name: 'a_placed', components: 2, type: 'Uint8' }
-];
+type SymbolArrayTypes<IndexArray> = {
+    LayoutArray: Class<StructArray>,
+    IndexArray: Class<IndexArray>,
+    DynamicLayoutArray?: Class<StructArray>,
+    OpacityArray?: Class<StructArray>,
+    CollisionArray?: Class<StructArray>
+}
 
-const symbolInterfaces = {
+const symbolArrayTypes = {
     text: {
-        layoutAttributes: layoutAttributes,
-        dynamicLayoutAttributes: dynamicLayoutAttributes,
-        indexArrayType: TriangleIndexArray,
-        opacityAttributes: placementOpacityAttributes,
-        paintAttributes: [
-            {property: 'text-color', name: 'fill_color'},
-            {property: 'text-halo-color', name: 'halo_color'},
-            {property: 'text-halo-width', name: 'halo_width'},
-            {property: 'text-halo-blur', name: 'halo_blur'},
-            {property: 'text-opacity', name: 'opacity'}
-        ]
+        LayoutArray,
+        DynamicLayoutArray,
+        IndexArray: TriangleIndexArray,
+        OpacityArray
     },
     icon: {
-        layoutAttributes: layoutAttributes,
-        dynamicLayoutAttributes: dynamicLayoutAttributes,
-        indexArrayType: TriangleIndexArray,
-        opacityAttributes: placementOpacityAttributes,
-        paintAttributes: [
-            {property: 'icon-color', name: 'fill_color'},
-            {property: 'icon-halo-color', name: 'halo_color'},
-            {property: 'icon-halo-width', name: 'halo_width'},
-            {property: 'icon-halo-blur', name: 'halo_blur'},
-            {property: 'icon-opacity', name: 'opacity'}
-        ]
+        LayoutArray,
+        DynamicLayoutArray,
+        IndexArray: TriangleIndexArray,
+        OpacityArray
     },
     collisionBox: { // used to render collision boxes for debugging purposes
-        layoutAttributes: [
-            {name: 'a_pos',        components: 2, type: 'Int16'},
-            {name: 'a_anchor_pos', components: 2, type: 'Int16'},
-            {name: 'a_extrude',    components: 2, type: 'Int16'}
-        ],
-        indexArrayType: LineIndexArray,
-        collisionAttributes: collisionAttributes
+        LayoutArray: CollisionBoxLayoutArray,
+        IndexArray: LineIndexArray,
+        CollisionArray
     },
     collisionCircle: { // used to render collision circles for debugging purposes
-        layoutAttributes: [
-            {name: 'a_pos',        components: 2, type: 'Int16'},
-            {name: 'a_anchor_pos', components: 2, type: 'Int16'},
-            {name: 'a_extrude',    components: 2, type: 'Int16'}
-        ],
-        collisionAttributes: collisionAttributes,
-        indexArrayType: TriangleIndexArray
+        LayoutArray: CollisionCircleLayoutArray,
+        IndexArray: TriangleIndexArray,
+        CollisionArray
     }
 };
 
@@ -213,15 +169,11 @@ function addDynamicAttributes(dynamicLayoutVertexArray, p, angle) {
     dynamicLayoutVertexArray.emplaceBack(p.x, p.y, angle);
 }
 
-class SymbolBuffers {
-    dynamicLayoutAttributes: ?Array<LayoutAttribute>;
-    opacityAttributes: ?Array<LayoutAttribute>;
-    collisionAttributes: ?Array<LayoutAttribute>;
-
+class SymbolBuffers<IndexArray: TriangleIndexArray | LineIndexArray> {
     layoutVertexArray: StructArray;
     layoutVertexBuffer: VertexBuffer;
 
-    indexArray: StructArray;
+    indexArray: IndexArray;
     indexBuffer: IndexBuffer;
 
     programConfigurations: ProgramConfigurationSet<SymbolStyleLayer>;
@@ -236,52 +188,41 @@ class SymbolBuffers {
     collisionVertexArray: StructArray;
     collisionVertexBuffer: VertexBuffer;
 
-    constructor(programInterface: ProgramInterface, layers: Array<SymbolStyleLayer>, zoom: number) {
-        this.dynamicLayoutAttributes = programInterface.dynamicLayoutAttributes;
-        this.opacityAttributes = programInterface.opacityAttributes;
-        this.collisionAttributes = programInterface.collisionAttributes;
-
-        const LayoutVertexArrayType = createVertexArrayType(programInterface.layoutAttributes);
-        const IndexArrayType = programInterface.indexArrayType;
-
-        this.layoutVertexArray = new LayoutVertexArrayType();
-        this.indexArray = new IndexArrayType();
-        this.programConfigurations = new ProgramConfigurationSet(programInterface, layers, zoom);
+    constructor(arrayTypes: SymbolArrayTypes<IndexArray>, programConfigurations: ProgramConfigurationSet<SymbolStyleLayer>) {
+        this.layoutVertexArray = new arrayTypes.LayoutArray();
+        this.indexArray = new arrayTypes.IndexArray();
+        this.programConfigurations = programConfigurations;
         this.segments = new SegmentVector();
 
-        if (programInterface.dynamicLayoutAttributes) {
-            const DynamicLayoutVertexArrayType = createVertexArrayType(programInterface.dynamicLayoutAttributes);
-            this.dynamicLayoutVertexArray = new DynamicLayoutVertexArrayType();
+        if (arrayTypes.DynamicLayoutArray) {
+            this.dynamicLayoutVertexArray = new arrayTypes.DynamicLayoutArray();
         }
 
-        if (programInterface.opacityAttributes) {
-            const OpacityVertexArrayType = createVertexArrayType(programInterface.opacityAttributes);
-            this.opacityVertexArray = new OpacityVertexArrayType();
+        if (arrayTypes.OpacityArray) {
+            this.opacityVertexArray = new arrayTypes.OpacityArray();
         }
 
-        if (programInterface.collisionAttributes) {
-            const CollisionVertexArrayType = createVertexArrayType(programInterface.collisionAttributes);
-            this.collisionVertexArray = new CollisionVertexArrayType();
+        if (arrayTypes.CollisionArray) {
+            this.collisionVertexArray = new arrayTypes.CollisionArray();
         }
-
     }
 
-    upload(context: Context, dynamicIndexBuffer) {
+    upload(context: Context, dynamicIndexBuffer: boolean = false) {
         this.layoutVertexBuffer = context.createVertexBuffer(this.layoutVertexArray);
         this.indexBuffer = context.createIndexBuffer(this.indexArray, dynamicIndexBuffer);
         this.programConfigurations.upload(context);
 
-        if (this.dynamicLayoutAttributes) {
+        if (this.dynamicLayoutVertexArray) {
             this.dynamicLayoutVertexBuffer = context.createVertexBuffer(this.dynamicLayoutVertexArray, true);
         }
-        if (this.opacityAttributes) {
+        if (this.opacityVertexArray) {
             this.opacityVertexBuffer = context.createVertexBuffer(this.opacityVertexArray, true);
             // This is a performance hack so that we can write to opacityVertexArray with uint32s
             // even though the shaders read uint8s
             this.opacityVertexBuffer.itemSize = 1;
             this.opacityVertexBuffer.attributes = shaderOpacityAttributes;
         }
-        if (this.collisionAttributes) {
+        if (this.collisionVertexArray) {
             this.collisionVertexBuffer = context.createVertexBuffer(this.collisionVertexArray, true);
         }
     }
@@ -374,11 +315,11 @@ class SymbolBucket implements Bucket {
     sortFeaturesByY: boolean;
     sortedAngle: number;
 
-    text: SymbolBuffers;
-    icon: SymbolBuffers;
-    collisionBox: SymbolBuffers;
+    text: SymbolBuffers<TriangleIndexArray>;
+    icon: SymbolBuffers<TriangleIndexArray>;
+    collisionBox: SymbolBuffers<LineIndexArray>;
     uploaded: boolean;
-    collisionCircle: SymbolBuffers;
+    collisionCircle: SymbolBuffers<TriangleIndexArray>;
 
     constructor(options: BucketParameters<SymbolStyleLayer>) {
         this.collisionBoxArray = options.collisionBoxArray;
@@ -401,10 +342,10 @@ class SymbolBucket implements Bucket {
     }
 
     createArrays() {
-        this.text = new SymbolBuffers(symbolInterfaces.text, this.layers, this.zoom);
-        this.icon = new SymbolBuffers(symbolInterfaces.icon, this.layers, this.zoom);
-        this.collisionBox = new SymbolBuffers(symbolInterfaces.collisionBox, this.layers, this.zoom);
-        this.collisionCircle = new SymbolBuffers(symbolInterfaces.collisionCircle, this.layers, this.zoom);
+        this.text = new SymbolBuffers(symbolArrayTypes.text, new ProgramConfigurationSet(symbolLayoutAttributes, this.layers, this.zoom, property => property.startsWith('text')));
+        this.icon = new SymbolBuffers(symbolArrayTypes.icon, new ProgramConfigurationSet(symbolLayoutAttributes, this.layers, this.zoom, property => property.startsWith('icon')));
+        this.collisionBox = new SymbolBuffers(symbolArrayTypes.collisionBox, new ProgramConfigurationSet(collisionBoxLayout, this.layers, this.zoom, () => false));
+        this.collisionCircle = new SymbolBuffers(symbolArrayTypes.collisionCircle, new ProgramConfigurationSet(collisionCircleLayout, this.layers, this.zoom, () => false));
 
         this.placedGlyphArray = new PlacedSymbolArray();
         this.placedIconArray = new PlacedSymbolArray();
@@ -544,7 +485,7 @@ class SymbolBucket implements Bucket {
         };
     }
 
-    addSymbols(arrays: SymbolBuffers,
+    addSymbols(arrays: SymbolBuffers<*>,
                quads: Array<SymbolQuad>,
                sizeVertex: any,
                lineOffset: [number, number],
@@ -615,12 +556,11 @@ class SymbolBucket implements Bucket {
     }
 
 
-    addCollisionDebugVertices(x1: number, y1: number, x2: number, y2: number, arrays: SymbolBuffers, boxAnchorPoint: Point, symbolInstance: SymbolInstance, isCircle: boolean) {
+    addCollisionDebugVertices(x1: number, y1: number, x2: number, y2: number, arrays: SymbolBuffers<TriangleIndexArray> | SymbolBuffers<LineIndexArray>, boxAnchorPoint: Point, symbolInstance: SymbolInstance, isCircle: boolean) {
         const segment = arrays.segments.prepareSegment(4, arrays.layoutVertexArray, arrays.indexArray);
         const index = segment.vertexLength;
 
         const layoutVertexArray = arrays.layoutVertexArray;
-        const indexArray = arrays.indexArray;
         const collisionVertexArray = arrays.collisionVertexArray;
 
         this._addCollisionDebugVertex(layoutVertexArray, collisionVertexArray, boxAnchorPoint, symbolInstance.anchor, new Point(x1, y1));
@@ -630,11 +570,13 @@ class SymbolBucket implements Bucket {
 
         segment.vertexLength += 4;
         if (isCircle) {
+            const indexArray: TriangleIndexArray = (arrays.indexArray: any);
             indexArray.emplaceBack(index, index + 1, index + 2);
             indexArray.emplaceBack(index, index + 2, index + 3);
 
             segment.primitiveLength += 2;
         } else {
+            const indexArray: LineIndexArray = (arrays.indexArray: any);
             indexArray.emplaceBack(index, index + 1);
             indexArray.emplaceBack(index + 1, index + 2);
             indexArray.emplaceBack(index + 2, index + 3);
@@ -762,8 +704,6 @@ register('SymbolBucket', SymbolBucket, {
     omit: ['layers', 'collisionBoxArray', 'features', 'compareText'],
     shallow: ['symbolInstances']
 });
-
-SymbolBucket.programInterfaces = symbolInterfaces;
 
 // this constant is based on the size of StructArray indexes used in a symbol
 // bucket--namely, glyphOffsetArrayStart

@@ -4,7 +4,7 @@ const browser = require('../util/browser');
 const mat4 = require('@mapbox/gl-matrix').mat4;
 const EXTENT = require('../data/extent');
 const VertexArrayObject = require('./vertex_array_object');
-const PosArray = require('../data/pos_array');
+const PosArray = require('../data/array_type/pos');
 
 import type Painter from './painter';
 import type SourceCache from '../source/source_cache';
