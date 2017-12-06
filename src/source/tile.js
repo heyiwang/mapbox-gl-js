@@ -91,7 +91,7 @@ class Tile {
     justReloaded: boolean;
 
     /**
-     * @param {OverscaledTileID} tileID 
+     * @param {OverscaledTileID} tileID
      * @param size
      */
     constructor(tileID: OverscaledTileID, size: number) {
@@ -154,13 +154,6 @@ class Tile {
         this.featureIndex = data.featureIndex;
         this.featureIndex.rawTileData = this.rawTileData;
         this.buckets = deserializeBucket(data.buckets, painter.style);
-
-        if (data.iconAtlasImage) {
-            this.iconAtlasImage = data.iconAtlasImage;
-        }
-        if (data.glyphAtlasImage) {
-            this.glyphAtlasImage = data.glyphAtlasImage;
-        }
 
         if (data.iconAtlasImage) {
             this.iconAtlasImage = data.iconAtlasImage;
