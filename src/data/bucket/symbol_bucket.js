@@ -302,8 +302,8 @@ class SymbolBucket implements Bucket {
     textSizeData: SizeData;
     iconSizeData: SizeData;
 
-    placedGlyphArray: StructArray;
-    placedIconArray: StructArray;
+    placedGlyphArray: PlacedSymbolArray;
+    placedIconArray: PlacedSymbolArray;
     glyphOffsetArray: StructArray;
     lineVertexArray: StructArray;
     features: Array<SymbolFeature>;

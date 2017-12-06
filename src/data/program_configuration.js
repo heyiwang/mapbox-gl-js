@@ -133,7 +133,7 @@ class SourceExpressionBinder<T> implements Binder<T> {
         this.name = name;
         this.type = type;
         this.statistics = { max: -Infinity };
-        this.PaintVertexArray = paintVertexArrays[property];
+        this.PaintVertexArray = paintVertexArrays[property].source;
         this.paintVertexArray = new this.PaintVertexArray();
     }
 
@@ -200,7 +200,7 @@ class CompositeExpressionBinder<T> implements Binder<T> {
         this.useIntegerZoom = useIntegerZoom;
         this.zoom = zoom;
         this.statistics = { max: -Infinity };
-        this.PaintVertexArray = paintVertexArrays[property];
+        this.PaintVertexArray = paintVertexArrays[property].composite;
         this.paintVertexArray = new this.PaintVertexArray();
     }
 

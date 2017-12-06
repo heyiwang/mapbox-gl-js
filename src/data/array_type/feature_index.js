@@ -1,19 +1,16 @@
 // This file is generated. Edit build/generate-struct-arrays.js, then run `node build/generate-struct-arrays.js`.
 // @flow
-
 /* eslint-disable camelcase */
 
-const {Struct, StructArray} = require('../../util/struct_array');
-const StructArrayLayout = require('./struct_array_layout_1_1ul_2ui');
+const assert = require('assert');
+const {Struct} = require('../../util/struct_array');
+const StructArrayLayout_1_1ul2ui = require('./struct_array_layout_1_1ul2ui');
 const {register} = require('../../util/web_worker_transfer');
-
-
 class FeatureIndexStruct extends Struct {
     featureIndex: number;
     sourceLayerIndex: number;
     bucketIndex: number;
 }
-
 (Object.defineProperty: any)(
     FeatureIndexStruct.prototype,
     'featureIndex',
@@ -40,16 +37,24 @@ class FeatureIndexStruct extends Struct {
 );
 FeatureIndexStruct.prototype.size = 8;
 
-class FeatureIndexStructArray extends StructArrayLayout {
+export type FeatureIndex = FeatureIndexStruct;
+
+
+class FeatureIndexStructArray extends StructArrayLayout_1_1ul2ui {
     getfeatureIndex(index: number) { return this.uint32[index * 2 + 0]; }
     getsourceLayerIndex(index: number) { return this.uint16[index * 4 + 2]; }
     getbucketIndex(index: number) { return this.uint16[index * 4 + 3]; }
+    /**
+     * Return the FeatureIndexStruct at the given location in the array.
+     * @param {number} index The index of the element.
+     */
+    get(index: number): FeatureIndexStruct {
+        assert(!this.isTransferred);
+        return new FeatureIndexStruct(this, index);
+    }
 }
 
-(FeatureIndexStructArray: any).serialize = StructArray.serialize;
-
 FeatureIndexStructArray.prototype.members = [{"name":"featureIndex", "type":"Uint32", "components":1, "offset":0, "size":4, "view":"uint32"}, {"name":"sourceLayerIndex", "type":"Uint16", "components":1, "offset":4, "size":2, "view":"uint16"}, {"name":"bucketIndex", "type":"Uint16", "components":1, "offset":6, "size":2, "view":"uint16"}];
-FeatureIndexStructArray.prototype.StructType = FeatureIndexStruct;
 
 register('FeatureIndexStructArray', FeatureIndexStructArray);
 

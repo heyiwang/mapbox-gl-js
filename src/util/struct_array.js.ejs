@@ -5,25 +5,27 @@ const {
     size,
     usedTypes,
     hasAnchorPoint,
-    layoutModule
+    layoutModule,
+    includeStructAccessors
 } = locals
 
 const StructTypeClass = `${camelize(name)}Struct`;
 const StructArrayClass = `${camelize(name)}StructArray`;
+const StructArrayLayoutClass = `${camelize(layoutModule)}`;
 -%>
 // This file is generated. Edit build/generate-struct-arrays.js, then run `node build/generate-struct-arrays.js`.
 // @flow
-
 /* eslint-disable camelcase */
-
-const {Struct, StructArray} = require('../../util/struct_array');
-const StructArrayLayout = require('./<%=layoutModule%>');
+<% if (includeStructAccessors) { %>
+const assert = require('assert');
+const {Struct} = require('../../util/struct_array');
+<% } -%>
+const <%=StructArrayLayoutClass%> = require('./<%=layoutModule%>');
 const {register} = require('../../util/web_worker_transfer');
-<% if (hasAnchorPoint) { %>
+<% if (includeStructAccessors && hasAnchorPoint) { %>
 const Point = require('@mapbox/point-geometry');
-<% } %>
-
 <%
+}
 // collect components
 const components = [];
 for (const member of members) {
@@ -35,18 +37,19 @@ for (const member of members) {
         components.push({name, member, component: c});
     }
 }
+
+if (includeStructAccessors) {
 -%>
 class <%=StructTypeClass%> extends Struct {
 <%
-// property declarations
-for (const {name} of components) {-%>
+    // property declarations
+    for (const {name} of components) {-%>
     <%=name%>: number;
-<% }
-if (hasAnchorPoint) { -%>
+<%  }
+    if (hasAnchorPoint) { -%>
     anchorPoint: Point;
-<% } -%>
+<%  } -%>
 }
-
 <%
 for (const {name, member, component} of components) {
     const elementOffset = `this._pos${member.size.toFixed(0)}`;
@@ -76,11 +79,16 @@ if (hasAnchorPoint) {
 -%>
 <%=StructTypeClass%>.prototype.size = <%=size%>;
 
-class <%=StructArrayClass%> extends StructArrayLayout {
+<%
+} // end 'if (includeStructAccessors)'
+-%>
+
+class <%=StructArrayClass%> extends <%=StructArrayLayoutClass%> {
 <%
 // component getters
 for (const member of members) {
     for (let c = 0; c < member.components; c++) {
+        if (!includeStructAccessors) continue;
         let name = `get${member.name}`;
         if (member.components > 1) {
             name += c;
@@ -92,13 +100,24 @@ for (const member of members) {
 <%
     }
 }
+
+// get(i)
+if (includeStructAccessors) {
+-%>
+    /**
+     * Return the <%=StructTypeClass%> at the given location in the array.
+     * @param {number} index The index of the element.
+     */
+    get(index: number): <%=StructTypeClass%> {
+        assert(!this.isTransferred);
+        return new <%=StructTypeClass%>(this, index);
+    }
+<%
+}
 -%>
 }
 
-(<%=StructArrayClass%>: any).serialize = StructArray.serialize;
-
 <%=StructArrayClass%>.prototype.members = <%-JSON.stringify(members).replace(/,/g, ', ')%>;
-<%=StructArrayClass%>.prototype.StructType = <%=StructTypeClass%>;
 
 register('<%=StructArrayClass%>', <%=StructArrayClass%>);
 

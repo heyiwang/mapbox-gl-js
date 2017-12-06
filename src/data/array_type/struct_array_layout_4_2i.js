@@ -1,5 +1,6 @@
 // This file is generated. Edit build/generate-struct-arrays.js, then run `node build/generate-struct-arrays.js`.
 // @flow
+/* eslint-disable camelcase */
 
 const {StructArray} = require('../../util/struct_array');
 
@@ -9,7 +10,7 @@ const {StructArray} = require('../../util/struct_array');
  *
  * @private
  */
-class StructArrayLayout42i extends StructArray {
+class StructArrayLayout_4_2i extends StructArray {
     uint8: Uint8Array;
     int16: Int16Array;
 
@@ -29,6 +30,6 @@ class StructArrayLayout42i extends StructArray {
 
 }
 
-StructArrayLayout42i.prototype.bytesPerElement = 4;
+StructArrayLayout_4_2i.prototype.bytesPerElement = 4;
 
-module.exports = StructArrayLayout42i;
+module.exports = StructArrayLayout_4_2i;

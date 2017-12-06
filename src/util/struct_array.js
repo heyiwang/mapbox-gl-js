@@ -82,7 +82,6 @@ class StructArray {
 
     // The following properties are defined on the prototype.
     members: Array<StructArrayMember>;
-    StructType: typeof Struct;
     bytesPerElement: number;
     +emplaceBack: Function;
 
@@ -120,15 +119,6 @@ class StructArray {
         structArray.capacity = input.arrayBuffer.byteLength / structArray.bytesPerElement;
         structArray._refreshViews();
         return structArray;
-    }
-
-    /**
-     * Return the Struct at the given location in the array.
-     * @param {number} index The index of the element.
-     */
-    get(index: number) {
-        assert(!this.isTransferred);
-        return new this.StructType(this, index);
     }
 
     /**
@@ -186,24 +176,6 @@ class StructArray {
         //     // $FlowFixMe
         //     this[getArrayViewName(type)] = new viewTypes[type](this.arrayBuffer);
         // }
-    }
-
-    /**
-     * Output the `StructArray` between indices `startIndex` and `endIndex` as an array of `StructTypes` to enable sorting
-     * @param {number} startIndex
-     * @param {number} endIndex
-     */
-    toArray(startIndex: number, endIndex: number) {
-        assert(!this.isTransferred);
-
-        const array = [];
-
-        for (let i = startIndex; i < endIndex; i++) {
-            const struct = this.get(i);
-            array.push(struct);
-        }
-
-        return array;
     }
 }
 

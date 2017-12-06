@@ -1,15 +1,13 @@
 // This file is generated. Edit build/generate-struct-arrays.js, then run `node build/generate-struct-arrays.js`.
 // @flow
-
 /* eslint-disable camelcase */
 
-const {Struct, StructArray} = require('../../util/struct_array');
-const StructArrayLayout = require('./struct_array_layout_1_6i_1ul_2ui_2i');
+const assert = require('assert');
+const {Struct} = require('../../util/struct_array');
+const StructArrayLayout_1_6i1ul2ui2i = require('./struct_array_layout_1_6i1ul2ui2i');
 const {register} = require('../../util/web_worker_transfer');
 
 const Point = require('@mapbox/point-geometry');
-
-
 class CollisionBoxStruct extends Struct {
     anchorPointX: number;
     anchorPointY: number;
@@ -24,7 +22,6 @@ class CollisionBoxStruct extends Struct {
     signedDistanceFromAnchor: number;
     anchorPoint: Point;
 }
-
 (Object.defineProperty: any)(
     CollisionBoxStruct.prototype,
     'anchorPointX',
@@ -119,7 +116,8 @@ class CollisionBoxStruct extends Struct {
 });
 CollisionBoxStruct.prototype.size = 24;
 
-class CollisionBoxStructArray extends StructArrayLayout {
+
+class CollisionBoxStructArray extends StructArrayLayout_1_6i1ul2ui2i {
     getanchorPointX(index: number) { return this.int16[index * 12 + 0]; }
     getanchorPointY(index: number) { return this.int16[index * 12 + 1]; }
     getx1(index: number) { return this.int16[index * 12 + 2]; }
@@ -131,12 +129,17 @@ class CollisionBoxStructArray extends StructArrayLayout {
     getbucketIndex(index: number) { return this.uint16[index * 12 + 9]; }
     getradius(index: number) { return this.int16[index * 12 + 10]; }
     getsignedDistanceFromAnchor(index: number) { return this.int16[index * 12 + 11]; }
+    /**
+     * Return the CollisionBoxStruct at the given location in the array.
+     * @param {number} index The index of the element.
+     */
+    get(index: number): CollisionBoxStruct {
+        assert(!this.isTransferred);
+        return new CollisionBoxStruct(this, index);
+    }
 }
 
-(CollisionBoxStructArray: any).serialize = StructArray.serialize;
-
 CollisionBoxStructArray.prototype.members = [{"name":"anchorPointX", "type":"Int16", "components":1, "offset":0, "size":2, "view":"int16"}, {"name":"anchorPointY", "type":"Int16", "components":1, "offset":2, "size":2, "view":"int16"}, {"name":"x1", "type":"Int16", "components":1, "offset":4, "size":2, "view":"int16"}, {"name":"y1", "type":"Int16", "components":1, "offset":6, "size":2, "view":"int16"}, {"name":"x2", "type":"Int16", "components":1, "offset":8, "size":2, "view":"int16"}, {"name":"y2", "type":"Int16", "components":1, "offset":10, "size":2, "view":"int16"}, {"name":"featureIndex", "type":"Uint32", "components":1, "offset":12, "size":4, "view":"uint32"}, {"name":"sourceLayerIndex", "type":"Uint16", "components":1, "offset":16, "size":2, "view":"uint16"}, {"name":"bucketIndex", "type":"Uint16", "components":1, "offset":18, "size":2, "view":"uint16"}, {"name":"radius", "type":"Int16", "components":1, "offset":20, "size":2, "view":"int16"}, {"name":"signedDistanceFromAnchor", "type":"Int16", "components":1, "offset":22, "size":2, "view":"int16"}];
-CollisionBoxStructArray.prototype.StructType = CollisionBoxStruct;
 
 register('CollisionBoxStructArray', CollisionBoxStructArray);
 
