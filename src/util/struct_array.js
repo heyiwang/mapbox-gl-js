@@ -78,21 +78,12 @@ class StructArray {
     length: number;
     isTransferred: boolean;
     arrayBuffer: ArrayBuffer;
-    +int8: ?Int8Array;
     uint8: Uint8Array;
-    +uint8clamped: ?Uint8ClampedArray;
-    +int16: ?Int16Array;
-    +uint16: ?Uint16Array;
-    +int32: ?Int32Array;
-    +uint32: ?Uint32Array;
-    +float32: ?Float32Array;
-    +float64: ?Float64Array;
 
     // The following properties are defined on the prototype.
     members: Array<StructArrayMember>;
     StructType: typeof Struct;
     bytesPerElement: number;
-    _usedTypes: Array<ViewType>;
     +emplaceBack: Function;
 
     constructor() {
@@ -120,6 +111,15 @@ class StructArray {
             length: array.length,
             arrayBuffer: array.arrayBuffer,
         };
+    }
+
+    static deserialize(input: SerializedStructArray) {
+        const structArray = Object.create(this.prototype);
+        structArray.arrayBuffer = input.arrayBuffer;
+        structArray.length = input.length;
+        structArray.capacity = input.arrayBuffer.byteLength / structArray.bytesPerElement;
+        structArray._refreshViews();
+        return structArray;
     }
 
     /**
@@ -181,10 +181,11 @@ class StructArray {
      * Create TypedArray views for the current ArrayBuffer.
      */
     _refreshViews() {
-        for (const type of this._usedTypes) {
-            // $FlowFixMe
-            this[getArrayViewName(type)] = new viewTypes[type](this.arrayBuffer);
-        }
+        throw new Error('_refreshViews() must be implemented by each concrete StructArray layout');
+        // for (const type of this._usedTypes) {
+        //     // $FlowFixMe
+        //     this[getArrayViewName(type)] = new viewTypes[type](this.arrayBuffer);
+        // }
     }
 
     /**
@@ -204,10 +205,6 @@ class StructArray {
 
         return array;
     }
-}
-
-function getArrayViewName(type: ViewType): string {
-    return type.toLowerCase();
 }
 
 module.exports.StructArray = StructArray;

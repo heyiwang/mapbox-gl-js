@@ -1,11 +1,11 @@
 <%
 const {
     name,
-    alignment,
     members,
-    hasAnchorPoint,
     size,
-    usedTypes
+    usedTypes,
+    hasAnchorPoint,
+    layoutModule
 } = locals
 
 const StructTypeClass = `${camelize(name)}Struct`;
@@ -17,12 +17,11 @@ const StructArrayClass = `${camelize(name)}StructArray`;
 /* eslint-disable camelcase */
 
 const {Struct, StructArray} = require('../../util/struct_array');
+const StructArrayLayout = require('./<%=layoutModule%>');
 const {register} = require('../../util/web_worker_transfer');
 <% if (hasAnchorPoint) { %>
 const Point = require('@mapbox/point-geometry');
 <% } %>
-
-import type {SerializedStructArray} from '../../util/struct_array';
 
 <%
 // collect components
@@ -77,15 +76,7 @@ if (hasAnchorPoint) {
 -%>
 <%=StructTypeClass%>.prototype.size = <%=size%>;
 
-class <%=StructArrayClass%> extends StructArray {
-<%
-for (const type of usedTypes) {
--%>
-    <%=type.toLowerCase()%>: <%=type%>Array;
-<%
-}
--%>
-
+class <%=StructArrayClass%> extends StructArrayLayout {
 <%
 // component getters
 for (const member of members) {
@@ -97,77 +88,17 @@ for (const member of members) {
         const componentOffset = (member.offset / member.size + c).toFixed(0);
         const componentStride = size / member.size;
 -%>
-    <%=name%>(index: number) {
-        return this.<%=member.view%>[index * <%=componentStride%> + <%=componentOffset%>];
-    }
-<%
-    }
-}
-
-// prep for emplaceBack: collect type sizes and count the number of arguments
-// we'll need
-const bytesPerElement = size;
-const usedTypeSizes = [];
-const argNames = [];
-for (const member of members) {
-    if (usedTypeSizes.indexOf(member.size) < 0) {
-        usedTypeSizes.push(member.size);
-    }
-    for (let c = 0; c < member.components; c++) {
-        // arguments v0, v1, v2, ... are, in order, the components of
-        // member 0, then the components of member 1, etc.
-        argNames.push(`v${argNames.length}: number`);
-    }
-}
--%>
-    emplaceBack(<%=argNames.join(', ')%>) {
-        const i = this.length;
-        this.resize(this.length + 1);
-
-        // array offsets to the end of current data for each type size
-        // var o{SIZE} = i * ROUNDED(bytesPerElement / size);
-<%
-for (const size of usedTypeSizes) {
--%>
-        const o<%=size.toFixed(0)%> = i * <%=(bytesPerElement / size).toFixed(0)%>;
-<%
-}
-
-let argIndex = 0;
-for (const member of members) {
-    for (let c = 0; c < member.components; c++) {
-        // The index for `member` component `c` into the appropriate type array is:
-        // this.{TYPE}[o{SIZE} + MEMBER_OFFSET + {c}] = v{X}
-        // where MEMBER_OFFSET = ROUND(member.offset / size) is the per-element
-        // offset of this member into the array
-        const index = `o${member.size.toFixed(0)} + ${(member.offset / member.size + c).toFixed(0)}`;
--%>
-        this.<%=member.view%>[<%=index%>] = v<%=argIndex++%>;
+    <%=name%>(index: number) { return this.<%=member.view%>[index * <%=componentStride%> + <%=componentOffset%>]; }
 <%
     }
 }
 -%>
-
-        return i;
-    }
-
-    static deserialize(input: SerializedStructArray): <%=StructArrayClass%> {
-        const structArray = Object.create(<%=StructArrayClass%>.prototype);
-        structArray.arrayBuffer = input.arrayBuffer;
-        structArray.length = input.length;
-        structArray.capacity = structArray.arrayBuffer.byteLength / structArray.bytesPerElement;
-        structArray._refreshViews();
-        return structArray;
-    }
 }
 
 (<%=StructArrayClass%>: any).serialize = StructArray.serialize;
 
 <%=StructArrayClass%>.prototype.members = <%-JSON.stringify(members).replace(/,/g, ', ')%>;
-<%=StructArrayClass%>.prototype.bytesPerElement = <%= size %>;
-<%=StructArrayClass%>.prototype._usedTypes = <%- JSON.stringify(usedTypes).replace(/,/g, ', ') %>;
 <%=StructArrayClass%>.prototype.StructType = <%=StructTypeClass%>;
-
 
 register('<%=StructArrayClass%>', <%=StructArrayClass%>);
 

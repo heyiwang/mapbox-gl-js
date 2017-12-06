@@ -4,10 +4,9 @@
 /* eslint-disable camelcase */
 
 const {Struct, StructArray} = require('../../util/struct_array');
+const StructArrayLayout = require('./struct_array_layout_4_4i_4ub');
 const {register} = require('../../util/web_worker_transfer');
 
-
-import type {SerializedStructArray} from '../../util/struct_array';
 
 class LineLayoutVertexStruct extends Struct {
     a_pos_normal0: number;
@@ -86,71 +85,21 @@ class LineLayoutVertexStruct extends Struct {
 );
 LineLayoutVertexStruct.prototype.size = 12;
 
-class LineLayoutVertexStructArray extends StructArray {
-    uint8: Uint8Array;
-    int16: Int16Array;
-
-    geta_pos_normal0(index: number) {
-        return this.int16[index * 6 + 0];
-    }
-    geta_pos_normal1(index: number) {
-        return this.int16[index * 6 + 1];
-    }
-    geta_pos_normal2(index: number) {
-        return this.int16[index * 6 + 2];
-    }
-    geta_pos_normal3(index: number) {
-        return this.int16[index * 6 + 3];
-    }
-    geta_data0(index: number) {
-        return this.uint8[index * 12 + 8];
-    }
-    geta_data1(index: number) {
-        return this.uint8[index * 12 + 9];
-    }
-    geta_data2(index: number) {
-        return this.uint8[index * 12 + 10];
-    }
-    geta_data3(index: number) {
-        return this.uint8[index * 12 + 11];
-    }
-    emplaceBack(v0: number, v1: number, v2: number, v3: number, v4: number, v5: number, v6: number, v7: number) {
-        const i = this.length;
-        this.resize(this.length + 1);
-
-        // array offsets to the end of current data for each type size
-        // var o{SIZE} = i * ROUNDED(bytesPerElement / size);
-        const o2 = i * 6;
-        const o1 = i * 12;
-        this.int16[o2 + 0] = v0;
-        this.int16[o2 + 1] = v1;
-        this.int16[o2 + 2] = v2;
-        this.int16[o2 + 3] = v3;
-        this.uint8[o1 + 8] = v4;
-        this.uint8[o1 + 9] = v5;
-        this.uint8[o1 + 10] = v6;
-        this.uint8[o1 + 11] = v7;
-
-        return i;
-    }
-
-    static deserialize(input: SerializedStructArray): LineLayoutVertexStructArray {
-        const structArray = Object.create(LineLayoutVertexStructArray.prototype);
-        structArray.arrayBuffer = input.arrayBuffer;
-        structArray.length = input.length;
-        structArray.capacity = structArray.arrayBuffer.byteLength / structArray.bytesPerElement;
-        structArray._refreshViews();
-        return structArray;
-    }
+class LineLayoutVertexStructArray extends StructArrayLayout {
+    geta_pos_normal0(index: number) { return this.int16[index * 6 + 0]; }
+    geta_pos_normal1(index: number) { return this.int16[index * 6 + 1]; }
+    geta_pos_normal2(index: number) { return this.int16[index * 6 + 2]; }
+    geta_pos_normal3(index: number) { return this.int16[index * 6 + 3]; }
+    geta_data0(index: number) { return this.uint8[index * 12 + 8]; }
+    geta_data1(index: number) { return this.uint8[index * 12 + 9]; }
+    geta_data2(index: number) { return this.uint8[index * 12 + 10]; }
+    geta_data3(index: number) { return this.uint8[index * 12 + 11]; }
 }
 
 (LineLayoutVertexStructArray: any).serialize = StructArray.serialize;
 
 LineLayoutVertexStructArray.prototype.members = [{"name":"a_pos_normal", "type":"Int16", "components":4, "offset":0, "size":2, "view":"int16"}, {"name":"a_data", "type":"Uint8", "components":4, "offset":8, "size":1, "view":"uint8"}];
-LineLayoutVertexStructArray.prototype.bytesPerElement = 12;
-LineLayoutVertexStructArray.prototype._usedTypes = ["Uint8", "Int16"];
 LineLayoutVertexStructArray.prototype.StructType = LineLayoutVertexStruct;
-
 
 register('LineLayoutVertexStructArray', LineLayoutVertexStructArray);
 

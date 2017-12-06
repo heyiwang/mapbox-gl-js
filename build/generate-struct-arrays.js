@@ -7,6 +7,7 @@ require('flow-remove-types/register');
 const assert = require('assert');
 const fs = require('fs');
 const ejs = require('ejs');
+const util = require('../src/util/util');
 const spec = require('../src/style-spec/reference/v8');
 
 import type {ViewType} from '../src/util/struct_array';
@@ -21,6 +22,7 @@ export type StructArrayTypeParameters = {
 };
 
 
+const structArrayLayoutJs = ejs.compile(fs.readFileSync('src/util/struct_array_layout.js.ejs', 'utf8'), {strict: true});
 const structArrayJs = ejs.compile(fs.readFileSync('src/util/struct_array.js.ejs', 'utf8'), {strict: true});
 
 const viewTypes = {
@@ -33,7 +35,18 @@ const viewTypes = {
     'Float32': Float32Array
 };
 
-const cache = {};
+const typeAbbreviations = {
+    'Int8': 'b',
+    'Uint8': 'ub',
+    'Int16': 'i',
+    'Uint16': 'ui',
+    'Int32': 'l',
+    'Uint32': 'ul',
+    'Float32': 'f'
+};
+
+const layoutCache = {};
+const arrayCache = {};
 const filesWritten = [];
 
 function createStructArrayType(moduleName: string, options: StructArrayTypeParameters) {
@@ -75,19 +88,21 @@ function createStructArrayType(moduleName: string, options: StructArrayTypeParam
 
     const size = align(offset, Math.max(maxSize, alignment));
 
+    const layoutModule = createStructArrayLayoutType(alignment, members, size, usedTypes);
+
     let code;
-    if (!cache[key]) {
+    if (!arrayCache[key]) {
         code = structArrayJs({
             name: moduleName,
             members,
-            alignment,
-            hasAnchorPoint,
             size,
-            usedTypes
+            usedTypes,
+            hasAnchorPoint,
+            layoutModule
         });
-        cache[key] = moduleName;
-    } else if (cache[key] !== moduleName) {
-        code = `// @flow\nmodule.exports = require('./${cache[key]}');`;
+        arrayCache[key] = moduleName;
+    } else if (arrayCache[key] !== moduleName) {
+        code = `// @flow\nmodule.exports = require('./${arrayCache[key]}');`;
     }
 
     if (code) {
@@ -96,6 +111,37 @@ function createStructArrayType(moduleName: string, options: StructArrayTypeParam
         filesWritten.push(file);
         fs.writeFileSync(file, code);
     }
+}
+
+function createStructArrayLayoutType(alignment, members, size, usedTypes) {
+    // combine consecutive 'members' with same underlying type, summing their
+    // component counts
+    members = members.reduce((memo, member) => {
+        if (memo.length > 0 && memo[memo.length - 1].type === member.type) {
+            const last = memo[memo.length - 1];
+            return memo.slice(0, -1).concat(util.extend({}, last, {
+                components: last.components + member.components,
+            }));
+        }
+        return memo.concat(member);
+    }, []);
+
+    const key = `${alignment}_${members.map(m => `${m.components}${typeAbbreviations[m.type]}`).join('_')}`;
+    const moduleName = `struct_array_layout_${key}`;
+    if (!layoutCache[key]) {
+        const code = structArrayLayoutJs({
+            name: moduleName,
+            members,
+            size,
+            usedTypes
+        });
+        const file = `src/data/array_type/${moduleName}.js`;
+        assert(filesWritten.indexOf(file) < 0, `${file} already exists`);
+        filesWritten.push(file);
+        fs.writeFileSync(file, code);
+        layoutCache[key] = true;
+    }
+    return moduleName;
 }
 
 function align(offset: number, size: number): number {
