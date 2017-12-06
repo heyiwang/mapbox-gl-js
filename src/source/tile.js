@@ -289,7 +289,7 @@ class Tile {
                           params: { filter: FilterSpecification, layers: Array<string> },
                           bearing: number,
                           sourceID: string): {[string]: Array<{ featureIndex: number, feature: GeoJSONFeature }>} {
-        if (!this.featureIndex)
+        if (!this.featureIndex || !this.collisionBoxArray)
             return {};
 
         // Determine the additional radius needed factoring in property functions

@@ -46,6 +46,7 @@ import type IndexBuffer from '../../gl/index_buffer';
 import type VertexBuffer from '../../gl/vertex_buffer';
 import type {SymbolQuad} from '../../symbol/quads';
 import type {SizeData} from '../../symbol/symbol_size';
+import type SymbolLineVertexArray from '../array_type/symbol_line_vertex';
 
 export type SingleCollisionBox = {
     x1: number;
@@ -113,36 +114,42 @@ const shaderOpacityAttributes = [
     { name: 'a_fade_opacity', components: 1, type: 'Uint8', offset: 0 }
 ];
 
-type SymbolArrayTypes<IndexArray> = {
+type SymbolBufferConfiguration<IndexArray> = {
     LayoutArray: Class<StructArray>,
     IndexArray: Class<IndexArray>,
-    DynamicLayoutArray?: Class<StructArray>,
-    OpacityArray?: Class<StructArray>,
-    CollisionArray?: Class<StructArray>
+    dynamicLayout: boolean,
+    opacity: boolean,
+    collision: boolean
 }
 
-const symbolArrayTypes = {
+const symbolBufferConfigurations = {
     text: {
         LayoutArray,
-        DynamicLayoutArray,
         IndexArray: TriangleIndexArray,
-        OpacityArray
+        dynamicLayout: true,
+        opacity: true,
+        collision: false
     },
     icon: {
         LayoutArray,
-        DynamicLayoutArray,
         IndexArray: TriangleIndexArray,
-        OpacityArray
+        dynamicLayout: true,
+        opacity: true,
+        collision: false
     },
     collisionBox: { // used to render collision boxes for debugging purposes
         LayoutArray: CollisionBoxLayoutArray,
         IndexArray: LineIndexArray,
-        CollisionArray
+        dynamicLayout: false,
+        opacity: false,
+        collision: true
     },
     collisionCircle: { // used to render collision circles for debugging purposes
         LayoutArray: CollisionCircleLayoutArray,
         IndexArray: TriangleIndexArray,
-        CollisionArray
+        dynamicLayout: false,
+        opacity: false,
+        collision: true
     }
 };
 
@@ -179,31 +186,31 @@ class SymbolBuffers<IndexArray: TriangleIndexArray | LineIndexArray> {
     programConfigurations: ProgramConfigurationSet<SymbolStyleLayer>;
     segments: SegmentVector;
 
-    dynamicLayoutVertexArray: StructArray;
+    dynamicLayoutVertexArray: DynamicLayoutArray;
     dynamicLayoutVertexBuffer: VertexBuffer;
 
-    opacityVertexArray: StructArray;
+    opacityVertexArray: OpacityArray;
     opacityVertexBuffer: VertexBuffer;
 
-    collisionVertexArray: StructArray;
+    collisionVertexArray: CollisionArray;
     collisionVertexBuffer: VertexBuffer;
 
-    constructor(arrayTypes: SymbolArrayTypes<IndexArray>, programConfigurations: ProgramConfigurationSet<SymbolStyleLayer>) {
-        this.layoutVertexArray = new arrayTypes.LayoutArray();
-        this.indexArray = new arrayTypes.IndexArray();
+    constructor(configuration: SymbolBufferConfiguration<IndexArray>, programConfigurations: ProgramConfigurationSet<SymbolStyleLayer>) {
+        this.layoutVertexArray = new configuration.LayoutArray();
+        this.indexArray = new configuration.IndexArray();
         this.programConfigurations = programConfigurations;
         this.segments = new SegmentVector();
 
-        if (arrayTypes.DynamicLayoutArray) {
-            this.dynamicLayoutVertexArray = new arrayTypes.DynamicLayoutArray();
+        if (configuration.dynamicLayout) {
+            this.dynamicLayoutVertexArray = new DynamicLayoutArray();
         }
 
-        if (arrayTypes.OpacityArray) {
-            this.opacityVertexArray = new arrayTypes.OpacityArray();
+        if (configuration.opacity) {
+            this.opacityVertexArray = new OpacityArray();
         }
 
-        if (arrayTypes.CollisionArray) {
-            this.collisionVertexArray = new arrayTypes.CollisionArray();
+        if (configuration.collision) {
+            this.collisionVertexArray = new CollisionArray();
         }
     }
 
@@ -304,8 +311,8 @@ class SymbolBucket implements Bucket {
 
     placedGlyphArray: PlacedSymbolArray;
     placedIconArray: PlacedSymbolArray;
-    glyphOffsetArray: StructArray;
-    lineVertexArray: StructArray;
+    glyphOffsetArray: GlyphOffsetArray;
+    lineVertexArray: SymbolLineVertexArray;
     features: Array<SymbolFeature>;
     symbolInstances: Array<SymbolInstance>;
     pixelRatio: number;
@@ -342,10 +349,10 @@ class SymbolBucket implements Bucket {
     }
 
     createArrays() {
-        this.text = new SymbolBuffers(symbolArrayTypes.text, new ProgramConfigurationSet(symbolLayoutAttributes, this.layers, this.zoom, property => property.startsWith('text')));
-        this.icon = new SymbolBuffers(symbolArrayTypes.icon, new ProgramConfigurationSet(symbolLayoutAttributes, this.layers, this.zoom, property => property.startsWith('icon')));
-        this.collisionBox = new SymbolBuffers(symbolArrayTypes.collisionBox, new ProgramConfigurationSet(collisionBoxLayout, this.layers, this.zoom, () => false));
-        this.collisionCircle = new SymbolBuffers(symbolArrayTypes.collisionCircle, new ProgramConfigurationSet(collisionCircleLayout, this.layers, this.zoom, () => false));
+        this.text = new SymbolBuffers(symbolBufferConfigurations.text, new ProgramConfigurationSet(symbolLayoutAttributes, this.layers, this.zoom, property => property.startsWith('text')));
+        this.icon = new SymbolBuffers(symbolBufferConfigurations.icon, new ProgramConfigurationSet(symbolLayoutAttributes, this.layers, this.zoom, property => property.startsWith('icon')));
+        this.collisionBox = new SymbolBuffers(symbolBufferConfigurations.collisionBox, new ProgramConfigurationSet(collisionBoxLayout, this.layers, this.zoom, () => false));
+        this.collisionCircle = new SymbolBuffers(symbolBufferConfigurations.collisionCircle, new ProgramConfigurationSet(collisionCircleLayout, this.layers, this.zoom, () => false));
 
         this.placedGlyphArray = new PlacedSymbolArray();
         this.placedIconArray = new PlacedSymbolArray();
