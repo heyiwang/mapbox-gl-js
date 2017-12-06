@@ -38,7 +38,7 @@ import type {
     PopulateParameters
 } from '../bucket';
 import type {ProgramInterface} from '../program_configuration';
-import type CollisionBoxArray, {CollisionBox} from '../../symbol/collision_box';
+import type CollisionBoxArray, {CollisionBox} from '../array_type/collision_box';
 import type { StructArray } from '../../util/struct_array';
 import type SymbolStyleLayer from '../../style/style_layer/symbol_style_layer';
 import type Context from '../../gl/context';

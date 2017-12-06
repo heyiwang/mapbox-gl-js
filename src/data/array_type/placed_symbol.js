@@ -136,6 +136,8 @@ class PlacedSymbolStruct extends Struct {
 );
 PlacedSymbolStruct.prototype.size = 40;
 
+export type PlacedSymbol = PlacedSymbolStruct;
+
 
 class PlacedSymbolStructArray extends StructArrayLayout_1_2i2ui3ul3ui2f2ub {
     getanchorX(index: number) { return this.int16[index * 20 + 0]; }

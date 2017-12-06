@@ -19,6 +19,8 @@ class GlyphOffsetStruct extends Struct {
 );
 GlyphOffsetStruct.prototype.size = 4;
 
+export type GlyphOffset = GlyphOffsetStruct;
+
 
 class GlyphOffsetStructArray extends StructArrayLayout_1_1f {
     getoffsetX(index: number) { return this.float32[index * 1 + 0]; }

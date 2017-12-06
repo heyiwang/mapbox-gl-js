@@ -2,7 +2,7 @@
 
 const {deserialize} = require('../util/web_worker_transfer');
 
-import type CollisionBoxArray from '../symbol/collision_box';
+import type CollisionBoxArray from './array_type/collision_box';
 import type Style from '../style/style';
 import type {TypedStyleLayer} from '../style/style_layer/typed_style_layer';
 import type FeatureIndex from './feature_index';

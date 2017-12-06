@@ -8,7 +8,7 @@ const mat4 = require('@mapbox/gl-matrix').mat4;
 import type SymbolBucket, {SymbolInstance} from '../data/bucket/symbol_bucket';
 import type OpacityState from './opacity_state';
 import type CollisionIndex from './collision_index';
-import type CollisionBoxArray from './collision_box';
+import type CollisionBoxArray from '../data/array_type/collision_box';
 import type {StructArray} from '../util/struct_array';
 
 module.exports = {
