@@ -4,6 +4,9 @@
 const StructArrayLayout_4_1ul = require('./struct_array_layout_4_1ul');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class SymbolOpacityVertexStructArray extends StructArrayLayout_4_1ul {
 }
 

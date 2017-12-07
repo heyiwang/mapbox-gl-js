@@ -4,6 +4,9 @@
 const StructArrayLayout_1_4i4ui = require('./struct_array_layout_1_4i4ui');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class SymbolLayoutVertexStructArray extends StructArrayLayout_1_4i4ui {
 }
 

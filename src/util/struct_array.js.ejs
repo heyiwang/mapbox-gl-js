@@ -85,6 +85,9 @@ export type <%=StructTypeClass.replace('Struct', '')%> = <%=StructTypeClass%>;
 } // end 'if (includeStructAccessors)'
 -%>
 
+/**
+ * @private
+ */
 class <%=StructArrayClass%> extends <%=StructArrayLayoutClass%> {
 <%
 // component getters

@@ -4,6 +4,9 @@
 const StructArrayLayout_4_2ub = require('./struct_array_layout_4_2ub');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class CollisionVertexStructArray extends StructArrayLayout_4_2ub {
 }
 

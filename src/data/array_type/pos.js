@@ -4,6 +4,9 @@
 const StructArrayLayout_1_2i = require('./struct_array_layout_1_2i');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class PosStructArray extends StructArrayLayout_1_2i {
 }
 

@@ -4,6 +4,9 @@
 const StructArrayLayout_4_4i4ub = require('./struct_array_layout_4_4i4ub');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class LineLayoutVertexStructArray extends StructArrayLayout_4_4i4ub {
 }
 

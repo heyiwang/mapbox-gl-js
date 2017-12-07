@@ -4,6 +4,9 @@
 const StructArrayLayout_4_6i = require('./struct_array_layout_4_6i');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class FillExtrusionLayoutVertexStructArray extends StructArrayLayout_4_6i {
 }
 

@@ -119,6 +119,9 @@ CollisionBoxStruct.prototype.size = 24;
 export type CollisionBox = CollisionBoxStruct;
 
 
+/**
+ * @private
+ */
 class CollisionBoxStructArray extends StructArrayLayout_1_6i1ul2ui2i {
     getanchorPointX(index: number) { return this.int16[index * 12 + 0]; }
     getanchorPointY(index: number) { return this.int16[index * 12 + 1]; }

@@ -4,6 +4,9 @@
 const StructArrayLayout_4_2i = require('./struct_array_layout_4_2i');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class CircleLayoutVertexStructArray extends StructArrayLayout_4_2i {
 }
 

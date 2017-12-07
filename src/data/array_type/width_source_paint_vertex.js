@@ -4,6 +4,9 @@
 const StructArrayLayout_4_1f = require('./struct_array_layout_4_1f');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class WidthSourcePaintVertexStructArray extends StructArrayLayout_4_1f {
 }
 

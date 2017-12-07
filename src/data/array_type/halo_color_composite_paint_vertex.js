@@ -4,6 +4,9 @@
 const StructArrayLayout_4_4f = require('./struct_array_layout_4_4f');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class HaloColorCompositePaintVertexStructArray extends StructArrayLayout_4_4f {
 }
 

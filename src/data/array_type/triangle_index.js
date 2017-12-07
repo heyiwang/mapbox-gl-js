@@ -4,6 +4,9 @@
 const StructArrayLayout_1_3ui = require('./struct_array_layout_1_3ui');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class TriangleIndexStructArray extends StructArrayLayout_1_3ui {
 }
 

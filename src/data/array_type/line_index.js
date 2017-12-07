@@ -4,6 +4,9 @@
 const StructArrayLayout_1_2ui = require('./struct_array_layout_1_2ui');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class LineIndexStructArray extends StructArrayLayout_1_2ui {
 }
 

@@ -40,6 +40,9 @@ SymbolLineVertexStruct.prototype.size = 6;
 export type SymbolLineVertex = SymbolLineVertexStruct;
 
 
+/**
+ * @private
+ */
 class SymbolLineVertexStructArray extends StructArrayLayout_1_3i {
     getx(index: number) { return this.int16[index * 3 + 0]; }
     gety(index: number) { return this.int16[index * 3 + 1]; }

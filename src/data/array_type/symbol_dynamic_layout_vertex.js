@@ -4,6 +4,9 @@
 const StructArrayLayout_1_3f = require('./struct_array_layout_1_3f');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class SymbolDynamicLayoutVertexStructArray extends StructArrayLayout_1_3f {
 }
 

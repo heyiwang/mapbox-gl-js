@@ -4,6 +4,9 @@
 const StructArrayLayout_1_4i = require('./struct_array_layout_1_4i');
 const {register} = require('../../util/web_worker_transfer');
 
+/**
+ * @private
+ */
 class RasterBoundsStructArray extends StructArrayLayout_1_4i {
 }
 

@@ -40,6 +40,9 @@ FeatureIndexStruct.prototype.size = 8;
 export type FeatureIndex = FeatureIndexStruct;
 
 
+/**
+ * @private
+ */
 class FeatureIndexStructArray extends StructArrayLayout_1_1ul2ui {
     getfeatureIndex(index: number) { return this.uint32[index * 2 + 0]; }
     getsourceLayerIndex(index: number) { return this.uint16[index * 4 + 2]; }
