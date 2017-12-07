@@ -39,7 +39,7 @@ class VertexArrayObject {
         let vertexBuffersDiffer = this.boundVertexBuffers.length !== vertexBuffers.length;
         for (let i = 0; !vertexBuffersDiffer && i < vertexBuffers.length; i++) {
             if (this.boundVertexBuffers[i] !== vertexBuffers[i]) {
-                vertexBuffersDiffer = false;
+                vertexBuffersDiffer = true;
             }
         }
 
